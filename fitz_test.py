@@ -1,14 +1,17 @@
-# for working programm you may need install packages and python modules:
+#!/usr/bin/env python3
+# This program allow select and view pdf files 
+# for working program you may need install packages and python modules:
 # sudo apt-get install python3-pip python3-tk blt-demo tcl8.6 tk8.6 tix python3-tk-dbg python3-pil python3-pil.imagetk
 # pip3 install PyMuPDF frontend pillow matplotlib
 
 
+# import modules
 from cProfile import label
 from fileinput import filename
 from tkinter import TOP, W, dialog
 from tkinter import ttk
 from tkinter.constants import BOTH, BOTTOM, HORIZONTAL, LEFT, RIGHT, VERTICAL, X, Y
-from turtle import width
+from turtle import delay, width
 import fitz
 from PIL import ImageTk,Image
 import tkinter
@@ -60,30 +63,42 @@ def add_menubar(root):
     #print(file_for_open)
     return
 
+# function for scrolling pages of document on mouse scroll
 def mouse_wheel(event):
     global canvas
     global vbar, cur_page_num
-    print("top position: %f, bottom position: %f, event.delta: %f" % (vbar.get()[0], vbar.get()[1], event.delta))
+#    print("top position: %f, bottom position: %f, event.delta: %f" % (vbar.get()[0], vbar.get()[1], event.delta))
+    print("cur_page_num = %f" % cur_page_num)
 
+    # if scroll down
     if event.num == 5 or event.delta < 0:
         print("scroll down")
-        canvas.yview_scroll(1,"units")
+        canvas.yview("scroll",1,"units")
 #        '''
-        if vbar.get()[1] == 1:
+        if vbar.get()[1] >= 1:
             if cur_page_num < doc.page_count:
                 new_page = cur_page_num+1
+                cur_page_num = new_page
                 load_pdf_page(root,new_page)
+                root.after(100)
                 canvas.yview("moveto","0.0")
+#                vbar.set(0.01,0.02)
+                canvas.config(yscrollcommand=vbar.set(0.01,0.02))
 #        '''
+    # if scroll up
     elif event.num == 4 or event.delta > 0:
         print("scroll up")
         canvas.yview("scroll",-1,"units")
 #        '''
-        if vbar.get()[0] == 0:
+        if vbar.get()[0] <= 0:
             if cur_page_num > 0:
                 new_page = cur_page_num-1
+                cur_page_num = new_page
                 load_pdf_page(root,new_page)
+                root.after(100)
                 canvas.yview("moveto","1.0")
+#                vbar.set(0.99,0.98)
+                canvas.config(yscrollcommand=vbar.set(0.99,0.98))
 #        '''
 
 def mouse_wheel_preview(event):
