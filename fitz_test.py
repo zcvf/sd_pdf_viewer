@@ -43,8 +43,8 @@ class SdPdfViewer:
         global file_for_open 
         global root
         file_for_open = tkinter.filedialog.askopenfilename(title="Open file",initialdir=(os.path.expanduser("~/")), defaultextension='.pdf')
-        load_pdf_page(root, 0)
-        load_pdf_preview(root, 0)
+        self.load_pdf_page(root, 0)
+        self.load_pdf_preview(root, 0)
 
         return
 
