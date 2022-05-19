@@ -40,9 +40,7 @@ class SdPdfViewer:
         return
 
     def open_file(self):
-        global file_for_open 
-        global root
-        file_for_open = tkinter.filedialog.askopenfilename(title="Open file",initialdir=(os.path.expanduser("~/")), defaultextension='.pdf')
+        self.file_for_open = tkinter.filedialog.askopenfilename(title="Open file",initialdir=(os.path.expanduser("~/")), defaultextension='.pdf')
         self.load_pdf_page(root, 0)
         self.load_pdf_preview(root, 0)
 
@@ -50,7 +48,6 @@ class SdPdfViewer:
 
 
     def close_program(self):
-        global root
         root.quit()
         return
 
@@ -69,79 +66,64 @@ class SdPdfViewer:
         #print(file_for_open)
         return
 
-'''
     # function for scrolling pages of document on mouse scroll
     def mouse_wheel(self, event):
-        global canvas
-        global vbar, cur_page_num
-        print("cur_page_num = %f" % cur_page_num)
+        print("cur_page_num = %f" % self.cur_page_num)
         if event.num == 5 or event.delta < 0:
             print("scroll down")
-            canvas.yview("scroll",1,"units")
-            if vbar.get()[1] >= 1:
-                if cur_page_num < doc.page_count:
-                    new_page = cur_page_num+1
-                    cur_page_num = new_page
-                    load_pdf_page(root,new_page)
+            self.canvas.yview("scroll",1,"units")
+            if self.vbar.get()[1] >= 1:
+                if self.cur_page_num < self.doc.page_count:
+                    new_page = self.cur_page_num+1
+                    self.cur_page_num = new_page
+                    self.load_pdf_page(root,new_page)
                     root.after(100)
-                    canvas.yview("moveto","0.0")
-                    canvas.config(yscrollcommand=vbar.set(0.01,0.02))
+                    self.canvas.yview("moveto","0.0")
+                    self.canvas.config(yscrollcommand=self.vbar.set(0.01,0.02))
         elif event.num == 4 or event.delta > 0:
             print("scroll up")
-            canvas.yview("scroll",-1,"units")
-            if vbar.get()[0] <= 0:
-                if cur_page_num > 0:
-                    new_page = cur_page_num-1
-                    cur_page_num = new_page
-                    load_pdf_page(root,new_page)
+            self.canvas.yview("scroll",-1,"units")
+            if self.vbar.get()[0] <= 0:
+                if self.cur_page_num > 0:
+                    new_page = self.cur_page_num-1
+                    self.cur_page_num = new_page
+                    self.load_pdf_page(root,new_page)
                     root.after(100)
-                    canvas.yview("moveto","1.0")
-                    canvas.config(yscrollcommand=vbar.set(0.99,0.98))
+                    self.canvas.yview("moveto","1.0")
+                    self.canvas.config(yscrollcommand=self.vbar.set(0.99,0.98))
 
     def mouse_wheel_preview(self, event):
-        global canvas2
         if event.num == 5 or event.delta < 0 :
-            canvas2.yview("scroll",1,"units")
+            self.canvas2.yview("scroll",1,"units")
         elif event.num == 4 or event.delta > 0:
-            canvas2.yview("scroll",-1,"units")
+            self.canvas2.yview("scroll",-1,"units")
 
 
     def load_pdf_page(self, root, page_num = 2, dpi = 120):
-        global cur_page_num
-        global frame
-        global canvas
-        global doc
-        global file_for_open, hbar, vbar
-        cur_page_num = page_num
+        self.cur_page_num = page_num
         rw = root.winfo_screenwidth()
         rh = root.winfo_screenheight()
-
-
-
-        if frame != None:
+        if self.frame != None:
             print("frame in globals")
-
         else:
             print("frame not in globals")
-            frame = tkinter.Frame(root)
-            frame.pack(side=LEFT, expand=True, fill=BOTH, pady=0, padx = 0)
+            self.frame = tkinter.Frame(root)
+            self.frame.pack(side=LEFT, expand=True, fill=BOTH, pady=0, padx = 0)
 
-        if canvas != None:
+        if self.canvas != None:
             print("canvas in globals")
         else:
-            canvas = tkinter.Canvas(frame, height = rh)
-            hbar = ttk.Scrollbar(frame,orient=HORIZONTAL)
-            hbar.pack(side=BOTTOM,expand=False,fill=X)
-            hbar.config(command=canvas.xview)
-            global vbar
-            vbar = ttk.Scrollbar(frame,orient=VERTICAL)
-            vbar.pack(side=RIGHT,expand=False,fill=Y)
-            vbar.config(command=canvas.yview)
+            self.canvas = tkinter.Canvas(self.frame, height = rh)
+            self.hbar = ttk.Scrollbar(self.frame,orient=HORIZONTAL)
+            self.hbar.pack(side=BOTTOM,expand=False,fill=X)
+            self.hbar.config(command=self.canvas.xview)
+            self.vbar = ttk.Scrollbar(self.frame,orient=VERTICAL)
+            self.vbar.pack(side=RIGHT,expand=False,fill=Y)
+            self.vbar.config(command=self.canvas.yview)
 
+        self.doc = fitz.Document(self.file_for_open)
 
-        doc = fitz.Document(file_for_open)
-
-        page = doc.load_page(page_num)
+        page = self.doc.load_page(page_num)
 
         pix = page.get_pixmap(dpi=dpi)
 
@@ -149,8 +131,7 @@ class SdPdfViewer:
         pw = pix.width
         ph = pix.height
         img = Image.frombytes(mode, [pw, ph], pix.samples)
-        global tkimg
-        tkimg = ImageTk.PhotoImage(img)
+        self.tkimg = ImageTk.PhotoImage(img)
 
 
         rw = root.winfo_width()
@@ -158,17 +139,18 @@ class SdPdfViewer:
         w = int(root.winfo_width()) - 300
         h = int(root.winfo_height()) - 300
 
-        if canvas != None:
-            canvas.config(scrollregion = (0,0,pw,ph))
-            canvas.config(height=h)
-            canvas.config(xscrollcommand=hbar.set, yscrollcommand=vbar.set)
-            canvas.create_image(int(pw/2), int(ph/2), image = tkimg)
-            canvas.bind("<Button-4>",mouse_wheel)
-            canvas.bind("<Button-5>",mouse_wheel)
-            canvas.bind("<MouseWheel>",mouse_wheel)
-            canvas.pack(side=LEFT,expand=True,fill=BOTH)
+        if self.canvas != None:
+            self.canvas.config(scrollregion = (0,0,pw,ph))
+            self.canvas.config(height=h)
+            self.canvas.config(xscrollcommand=self.hbar.set, yscrollcommand=self.vbar.set)
+            self.canvas.create_image(int(pw/2), int(ph/2), image = self.tkimg)
+            self.canvas.bind("<Button-4>",self.mouse_wheel)
+            self.canvas.bind("<Button-5>",self.mouse_wheel)
+            self.canvas.bind("<MouseWheel>",self.mouse_wheel)
+            self.canvas.pack(side=LEFT,expand=True,fill=BOTH)
 
 
+'''
 
     def load_pdf_preview(root, page_num = 2, dpi = 16):
         global frame2, frame3, canvas2, doc, file_for_open
