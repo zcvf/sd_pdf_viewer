@@ -70,7 +70,8 @@ class SdPdfViewer():
     # function for scrolling pages of document on mouse scroll
     def mouse_wheel(self, event):
 #        print("cur_page_num = %f" % self.cur_page_num)
-        if event.num == 5 or event.delta < 0:
+       self.canvas.config(scrollregion = (0,0,self.pw,self.ph))
+       if event.num == 5 or event.delta < 0:
             print("scroll down")
             self.canvas.yview("scroll",1,"units")
             if self.vbar.get()[1] >= 1:
@@ -78,10 +79,10 @@ class SdPdfViewer():
                     new_page = self.cur_page_num+1
                     self.cur_page_num = new_page
                     self.load_pdf_page(new_page)
-                    self.root.after(100)
-                    self.canvas.yview("moveto","0.0")
-                    self.canvas.config(yscrollcommand=self.vbar.set(0.01,0.02))
-        elif event.num == 4 or event.delta > 0:
+                    #self.root.after(100)
+                    self.canvas.yview("moveto", 0)
+                    self.canvas.config(yscrollcommand=self.vbar.set(0.0,0.1))
+       elif event.num == 4 or event.delta > 0:
             print("scroll up")
             self.canvas.yview("scroll",-1,"units")
             if self.vbar.get()[0] <= 0:
@@ -89,9 +90,9 @@ class SdPdfViewer():
                     new_page = self.cur_page_num-1
                     self.cur_page_num = new_page
                     self.load_pdf_page(new_page)
-                    self.root.after(100)
-                    self.canvas.yview("moveto","1.0")
-                    self.canvas.config(yscrollcommand=self.vbar.set(0.99,0.98))
+                    #self.root.after(100)
+                    self.canvas.yview("moveto", 1)
+                    self.canvas.config(yscrollcommand=self.vbar.set(0.9,1.0))
 
     def mouse_wheel_preview(self, event):
         if event.num == 5 or event.delta < 0 :
@@ -129,9 +130,9 @@ class SdPdfViewer():
         pix = page.get_pixmap(dpi=dpi)
 
         mode = "RGBA" if pix.alpha else "RGB"
-        pw = pix.width
-        ph = pix.height
-        img = Image.frombytes(mode, [pw, ph], pix.samples)
+        self.pw = pix.width
+        self.ph = pix.height
+        img = Image.frombytes(mode, [self.pw, self.ph], pix.samples)
         self.tkimg = ImageTk.PhotoImage(img)
 
 
@@ -141,10 +142,10 @@ class SdPdfViewer():
         h = int(self.root.winfo_height()) - 300
 
         if self.canvas != None:
-            self.canvas.config(scrollregion = (0,0,pw,ph))
-            self.canvas.config(height=h)
+            self.canvas.config(scrollregion = (0,0,self.pw,self.ph))
+            self.canvas.config(width=w, height=h)
             self.canvas.config(xscrollcommand=self.hbar.set, yscrollcommand=self.vbar.set)
-            self.canvas.create_image(int(pw/2), int(ph/2), image = self.tkimg)
+            self.canvas.create_image(int(self.pw/2), int(self.ph/2), image = self.tkimg)
             self.canvas.bind("<Button-4>",self.mouse_wheel)
             self.canvas.bind("<Button-5>",self.mouse_wheel)
             self.canvas.bind("<MouseWheel>",self.mouse_wheel)
