@@ -21,20 +21,24 @@ import os
 class SdPdfViewer():
 
     def __init__(self, root):
-        self.root = root
-        self.img_ref = None
-        self.but_ref = None
-        self.but = None
-        self.tkimg = None
-        self.file_for_open = None
-        self.frame = None
-        self.canvas = None
-        self.frame2 = None
-        self.frame3 = None
-        self.canvas2 = None
-        self.doc = None
-        self.hbar = None
-        self.vbar = None
+       self.root = root
+       self.img_ref = None
+       self.but_ref = None
+       self.but = None
+       self.tkimg = None
+       self.file_for_open = None
+       self.frame = None
+       self.canvas = None
+       self.frame2 = None
+       self.frame3 = None
+       self.canvas2 = None
+       self.doc = None
+       self.hbar = None
+       self.vbar = None
+       self.next_page_count = 0 
+       self.prev_page_count = 0 
+
+
 
     def donothing(self):
         print("donothing")
@@ -67,32 +71,37 @@ class SdPdfViewer():
         #print(file_for_open)
         return
 
+
     # function for scrolling pages of document on mouse scroll
     def mouse_wheel(self, event):
-#        print("cur_page_num = %f" % self.cur_page_num)
-       self.canvas.config(scrollregion = (0,0,self.pw,self.ph))
+       print("cur_page_num = %f" % self.cur_page_num)
+#       self.canvas.config(scrollregion = (0,0,self.pw,self.ph))
+       scroll_difference = self.vbar.get()[1] - self.vbar.get()[0]
        if event.num == 5 or event.delta < 0:
-            print("scroll down")
-            self.canvas.yview("scroll",1,"units")
-            if self.vbar.get()[1] >= 1:
+            self.canvas.yview("scroll", 1,"units")
+            if self.vbar.get()[1] >= 1.0:
                 if self.cur_page_num < self.doc.page_count:
                     new_page = self.cur_page_num+1
                     self.cur_page_num = new_page
                     self.load_pdf_page(new_page)
-                    #self.root.after(100)
                     self.canvas.yview("moveto", 0)
-                    self.canvas.config(yscrollcommand=self.vbar.set(0.0,0.1))
+                    self.canvas2.yview("moveto", self.cur_page_num / self.doc.page_count)
+                    self.canvas.config(yscrollcommand=self.vbar.set(0, scroll_difference))
+#                    self.next_page_count = 0
+                    return None
        elif event.num == 4 or event.delta > 0:
             print("scroll up")
             self.canvas.yview("scroll",-1,"units")
-            if self.vbar.get()[0] <= 0:
+            if self.vbar.get()[0] <= 0.0:
                 if self.cur_page_num > 0:
                     new_page = self.cur_page_num-1
                     self.cur_page_num = new_page
                     self.load_pdf_page(new_page)
-                    #self.root.after(100)
                     self.canvas.yview("moveto", 1)
-                    self.canvas.config(yscrollcommand=self.vbar.set(0.9,1.0))
+                    self.canvas2.yview("moveto", self.cur_page_num / self.doc.page_count)
+                    self.canvas.config(yscrollcommand=self.vbar.set(1-scroll_difference, 1))
+                    return None
+       return None
 
     def mouse_wheel_preview(self, event):
         if event.num == 5 or event.delta < 0 :
@@ -101,7 +110,7 @@ class SdPdfViewer():
             self.canvas2.yview("scroll",-1,"units")
 
 
-    def load_pdf_page(self, page_num = 2, dpi = 120):
+    def load_pdf_page(self, page_num = 0, dpi = 120):
         self.cur_page_num = page_num
         rw = self.root.winfo_screenwidth()
         rh = self.root.winfo_screenheight()
@@ -138,62 +147,56 @@ class SdPdfViewer():
 
         rw = self.root.winfo_width()
         rh = self.root.winfo_height()
-        w = int(self.root.winfo_width()) - 300
+#        w = int(self.root.winfo_width()) - 300
+        w = int(self.pw)
         h = int(self.root.winfo_height()) - 300
 
         if self.canvas != None:
             self.canvas.config(scrollregion = (0,0,self.pw,self.ph))
             self.canvas.config(width=w, height=h)
-            self.canvas.config(xscrollcommand=self.hbar.set, yscrollcommand=self.vbar.set)
+            self.canvas.config(xscrollcommand=self.hbar.set, yscrollcommand=self.vbar.set, yscrollincrement='10')
             self.canvas.create_image(int(self.pw/2), int(self.ph/2), image = self.tkimg)
             self.canvas.bind("<Button-4>",self.mouse_wheel)
             self.canvas.bind("<Button-5>",self.mouse_wheel)
             self.canvas.bind("<MouseWheel>",self.mouse_wheel)
             self.canvas.pack(side=LEFT,expand=True,fill=BOTH)
 
+        return None
+
 
     def load_pdf_preview(self, page_num = 2, dpi = 16):
         self.doc = fitz.Document(self.file_for_open)
         rw = self.root.winfo_screenwidth()
         rh = self.root.winfo_screenheight()
-        if self.frame2 != None:
-            print("self.frame2 in globals")
+
+        if self.frame2:
+            print("self.frame2 in globals... remove")
             self.frame2.pack_forget()
             self.frame2.destroy()
-            self.frame2=ttk.Frame(self.root)
-            self.frame2.config(width=200,height=self.frame2.winfo_height())
 
-        else:
-            self.frame2=ttk.Frame(self.root)
-            self.frame2.config(width=500,height=self.frame2.winfo_height())
-        if self.canvas2 != None:
-            print("self.canvas2 in globals")
+        self.frame2=ttk.Frame(self.root)
+        self.frame2.config(width=250,height=self.frame2.winfo_height())
+
+        if self.canvas2:
+            print("self.canvas2 in globals... remove")
             self.canvas2.destroy()
-            self.canvas2 = tkinter.Canvas(self.frame2, bg="#dedede")
-        else:
-            self.canvas2 = tkinter.Canvas(self.frame2, bg="#dedede")
+
+        self.canvas2 = tkinter.Canvas(self.frame2, bg="#dedede")
         
         print(" :: %d" % int(self.frame2.winfo_height()))
-        self.canvas2.config(width = 300, height = rh)
+        self.canvas2.config(width = 200, height = rh)
 
         if self.frame3 != None:
             self.frame3.pack_forget()
             self.frame3.destroy()
-            self.frame3 = ttk.Frame(self.canvas2)
-            self.frame3.bind(
-                "<Configure>",
-                lambda e: self.canvas2.configure(
-                    scrollregion=self.canvas2.bbox("all")
-                )
-            )
-        else:
-            self.frame3 = ttk.Frame(self.canvas2)
-            self.frame3.bind(
-                "<Configure>",
-                lambda e: self.canvas2.configure(
-                    scrollregion=self.canvas2.bbox("all")
-                )
-            )
+
+        self.frame3 = ttk.Frame(self.canvas2)
+        self.frame3.bind(
+           "<Configure>",
+           lambda e: self.canvas2.configure(
+               scrollregion=self.canvas2.bbox("all")
+           )
+        )
 
 
         preview = []
@@ -225,13 +228,13 @@ class SdPdfViewer():
         self.canvas2.bind("<Button-5>", self.mouse_wheel_preview)
         self.canvas2.bind("<MouseWheel>", self.mouse_wheel_preview)
 
-        self.frame3.pack(side=RIGHT, expand=True, fill=Y)
+        self.frame3.pack(side=RIGHT, expand=True, fill="y")
 
-        self.canvas2.pack(side=LEFT, expand=True, fill=Y)
+        self.canvas2.pack(side=LEFT, expand=True, fill="y")
 
         self.canvas2.create_window((1,1), window=self.frame3,anchor="nw")
 
-        self.frame2.pack(side=RIGHT, expand=False, fill=Y)
+        self.frame2.pack(side=RIGHT, expand=False, fill="y")
 
         self.vbar2 = ttk.Scrollbar(self.frame2,orient=VERTICAL,command=self.canvas2.yview)
         self.canvas2.config(yscrollcommand=self.vbar2.set)
